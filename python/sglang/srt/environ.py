@@ -1431,6 +1431,9 @@ class Envs:
     # A/B: on XPU, build the EAGLE draft tree with the sgl-kernel-xpu SYCL op
     # instead of the Triton kernel.
     SGLANG_USE_SYCL_BUILD_TREE = EnvBool(False)
+    # A/B: on XPU, run EAGLE greedy tree verification with the sgl-kernel-xpu
+    # SYCL op instead of the Triton kernel.
+    SGLANG_USE_SYCL_VERIFY_TREE = EnvBool(False)
 
     # ===================================================================
     # Multimodal processing
