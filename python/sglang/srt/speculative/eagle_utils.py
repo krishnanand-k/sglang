@@ -13,6 +13,7 @@ from sglang.kernels.ops.speculative.spec_tree import (
     sgl_build_tree_kernel_efficient_triton,
     verify_tree_greedy_kernel_triton,
 )
+from sglang.srt.environ import envs
 from sglang.srt.hardware_backend.npu.dsv4.dsv4_common_hooks import (
     maybe_build_dsv4_verify_bundle,
 )
@@ -48,6 +49,7 @@ _is_npu = is_npu()
 _is_musa = is_musa()
 _is_xpu = is_xpu()
 _is_cpu = is_cpu()
+_use_sycl_build_tree = _is_xpu and envs.SGLANG_USE_SYCL_BUILD_TREE.get()
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +66,12 @@ elif _is_cpu:
         build_tree_kernel_efficient_cpu as sgl_build_tree_kernel_efficient_cpu,
     )
     from sgl_kernel import verify_tree_greedy_cpu as sgl_verify_tree_greedy_cpu
+elif _use_sycl_build_tree:
+    from sgl_kernel import (
+        build_tree_kernel_efficient as sgl_build_tree_kernel_efficient_sycl,
+    )
+
+    logger.info("EAGLE build_tree: using the SYCL kernel (SGLANG_USE_SYCL_BUILD_TREE)")
 
 
 def per_step_draft_out_cache_loc(
@@ -231,6 +239,21 @@ def build_tree_kernel_efficient(
     if _is_npu:
         torch.ops.npu.build_tree_kernel_efficient(
             parent_list.to(dtype=torch.int64),
+            top_scores_index,
+            seq_lens,
+            tree_mask,
+            positions,
+            retrieve_index,
+            retrieve_next_token,
+            retrieve_next_sibling,
+            topk,
+            spec_steps,
+            num_verify_tokens,
+            tree_mask_mode,
+        )
+    elif _use_sycl_build_tree:
+        sgl_build_tree_kernel_efficient_sycl(
+            parent_list,
             top_scores_index,
             seq_lens,
             tree_mask,

@@ -1428,6 +1428,9 @@ class Envs:
     # debugging). Correctness is unaffected; this only changes performance.
     SGLANG_ENABLE_SPLITKV_VERIFY = EnvBool(True)
     SGLANG_NGRAM_FORCE_GREEDY_VERIFY = EnvBool(False)
+    # A/B: on XPU, build the EAGLE draft tree with the sgl-kernel-xpu SYCL op
+    # instead of the Triton kernel.
+    SGLANG_USE_SYCL_BUILD_TREE = EnvBool(False)
 
     # ===================================================================
     # Multimodal processing
