@@ -7,6 +7,7 @@ import torch
 from sglang.kernels.ops.speculative.cache_locs import (
     assign_extend_cache_locs_func as assign_extend_cache_locs_func,
 )
+from sglang.srt.environ import envs
 from sglang.srt.layers.logprob_processor import compute_spec_logprobs
 from sglang.srt.managers.schedule_batch import ScheduleBatch
 from sglang.srt.managers.scheduler import GenerationBatchResult
@@ -37,9 +38,12 @@ from sglang.srt.utils.async_probe import maybe_detect_inf, maybe_detect_nan
 _is_cpu = is_cpu()
 
 if is_xpu():
-    from sglang.kernels.ops.speculative.reconstruct_tree import (
-        reconstruct_indices_from_tree_mask_triton as reconstruct_indices_from_tree_mask,
-    )
+    if envs.SGLANG_USE_SYCL_RECONSTRUCT_TREE.get():
+        from sgl_kernel import reconstruct_indices_from_tree_mask
+    else:
+        from sglang.kernels.ops.speculative.reconstruct_tree import (
+            reconstruct_indices_from_tree_mask_triton as reconstruct_indices_from_tree_mask,
+        )
 elif is_cuda():
     from sglang.kernels.ops.speculative.tree import reconstruct_indices_from_tree_mask
 else:

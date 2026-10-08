@@ -1434,6 +1434,9 @@ class Envs:
     # A/B: on XPU, run EAGLE greedy tree verification with the sgl-kernel-xpu
     # SYCL op instead of the Triton kernel.
     SGLANG_USE_SYCL_VERIFY_TREE = EnvBool(False)
+    # A/B: on XPU, reconstruct NGRAM verify indices from the tree mask with the
+    # sgl-kernel-xpu SYCL op instead of the Triton kernel.
+    SGLANG_USE_SYCL_RECONSTRUCT_TREE = EnvBool(False)
 
     # ===================================================================
     # Multimodal processing
