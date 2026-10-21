@@ -17,6 +17,7 @@ import torch
 import triton
 import triton.language as tl
 
+from sglang.srt.environ import envs
 from sglang.srt.utils import is_cpu, is_cuda, is_hip, is_musa, is_npu, is_xpu
 
 _is_cuda = is_cuda()
@@ -25,6 +26,7 @@ _is_musa = is_musa()
 _is_npu = is_npu()
 _is_xpu = is_xpu()
 _is_cpu = is_cpu()
+_use_sycl_build_tree = _is_xpu and envs.SGLANG_USE_SYCL_BUILD_TREE.get()
 
 if _is_cuda or _is_hip:
     from sglang.kernels.ops.speculative.tree import (
@@ -39,6 +41,11 @@ elif _is_cpu:
         build_tree_kernel_efficient_cpu as sgl_build_tree_kernel_efficient_cpu,
     )
     from sgl_kernel import verify_tree_greedy_cpu as sgl_verify_tree_greedy_cpu
+
+if _use_sycl_build_tree:
+    from sgl_kernel import (
+        build_tree_kernel_efficient as sgl_build_tree_kernel_efficient_sycl,
+    )
 
 
 class TreeMaskMode(IntEnum):
@@ -379,6 +386,21 @@ def build_tree_kernel_efficient_func(
     if _is_npu:
         torch.ops.npu.build_tree_kernel_efficient(
             parent_list.to(dtype=torch.int64),
+            top_scores_index,
+            seq_lens,
+            tree_mask,
+            positions,
+            retrieve_index,
+            retrieve_next_token,
+            retrieve_next_sibling,
+            topk,
+            spec_steps,
+            num_verify_tokens,
+            tree_mask_mode,
+        )
+    elif _use_sycl_build_tree:
+        sgl_build_tree_kernel_efficient_sycl(
+            parent_list,
             top_scores_index,
             seq_lens,
             tree_mask,
