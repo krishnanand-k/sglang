@@ -27,6 +27,7 @@ _is_npu = is_npu()
 _is_xpu = is_xpu()
 _is_cpu = is_cpu()
 _use_sycl_build_tree = _is_xpu and envs.SGLANG_USE_SYCL_BUILD_TREE.get()
+_use_sycl_verify_tree = _is_xpu and envs.SGLANG_USE_SYCL_VERIFY_TREE.get()
 
 if _is_cuda or _is_hip:
     from sglang.kernels.ops.speculative.tree import (
@@ -46,6 +47,9 @@ if _use_sycl_build_tree:
     from sgl_kernel import (
         build_tree_kernel_efficient as sgl_build_tree_kernel_efficient_sycl,
     )
+
+if _use_sycl_verify_tree:
+    from sgl_kernel import verify_tree_greedy as sgl_verify_tree_greedy_sycl
 
 
 class TreeMaskMode(IntEnum):
@@ -543,6 +547,18 @@ def verify_tree_greedy_func(
             predicts=predicts,
             accept_index=accept_index,
             accept_token_num=accept_token_num,
+            candidates=candidates,
+            # kwarg LHS retained as `retrive_*` to match sgl_kernel op schema.
+            retrive_index=retrieve_index,
+            retrive_next_token=retrieve_next_token,
+            retrive_next_sibling=retrieve_next_sibling,
+            target_predict=target_predict,
+        )
+    elif _use_sycl_verify_tree:
+        sgl_verify_tree_greedy_sycl(
+            predicts=predicts,  # mutable
+            accept_index=accept_index,  # mutable
+            accept_token_num=accept_token_num,  # mutable
             candidates=candidates,
             # kwarg LHS retained as `retrive_*` to match sgl_kernel op schema.
             retrive_index=retrieve_index,
