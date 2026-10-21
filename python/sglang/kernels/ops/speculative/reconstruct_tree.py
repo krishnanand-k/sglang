@@ -40,12 +40,18 @@ import torch
 import triton
 import triton.language as tl
 
+from sglang.srt.environ import envs
 from sglang.srt.utils import is_cuda, is_hip, is_xpu, next_power_of_2
 
 _is_xpu = is_xpu()
+_use_sycl_reconstruct_tree = (
+    _is_xpu and envs.SGLANG_USE_SYCL_RECONSTRUCT_TREE.get()
+)
 
 if is_cuda() or is_hip():
     from sglang.kernels.ops.speculative.tree import reconstruct_indices_from_tree_mask
+elif _use_sycl_reconstruct_tree:
+    from sgl_kernel import reconstruct_indices_from_tree_mask
 elif not _is_xpu:
     from sgl_kernel.speculative import reconstruct_indices_from_tree_mask
 
@@ -170,7 +176,7 @@ def reconstruct_indices_from_tree_mask_func(
     batch_size: int,
     draft_token_num: int,
 ) -> None:
-    if _is_xpu:
+    if _is_xpu and not _use_sycl_reconstruct_tree:
         reconstruct_indices_from_tree_mask_triton(
             tree_mask,
             verified_seq_len,
